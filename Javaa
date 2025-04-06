@@ -1,196 +1,143 @@
-static,public class MyClass {
-    static int classVariable = 0;
-    int instanceVariable;
 
-    public static void classMethod() {
-        System.out.println("This is a static method.");
-    }
-
-    static {
-        System.out.println("Static initialization block executed.");
-        classVariable = 10;
-    }
-
-    public MyClass(int instanceVariable) {
-        this.instanceVariable = instanceVariable;
-    }
-
-    public static void main(String[] args) {
-        MyClass.classMethod();
-        MyClass obj1 = new MyClass(5);
-        MyClass obj2 = new MyClass(15);
-        System.out.println("obj1.classVariable: " + obj1.classVariable);
-        obj1.classVariable = 20;
-        System.out.println("obj2.classVariable: " + obj2.classVariable);
-    }
-}
-final,public class MyClass {
-    final int constantValue = 10;
-
-    public final void myMethod() {
-        System.out.println("This is a final method.");
-    }
-}
-
-final class FinalClass { }
-
-class SubClass extends MyClass {
-    // public void myMethod() { } // Error: Cannot override final method
-}
-
-public class Main {
-    public static void main(String[] args) {
-        MyClass obj = new MyClass();
-        System.out.println(obj.constantValue);
-    }
-}
-abstract,abstract class MyAbstractClass {
-    public abstract void myAbstractMethod();
-    public void myConcreteMethod() {
-        System.out.println("This is a concrete method.");
-    }
-}
-
-class MySubClass extends MyAbstractClass {
-    @Override
-    public void myAbstractMethod() {
-        System.out.println("Implementation of myAbstractMethod.");
-    }
-}
-
-public class Main {
-    public static void main(String[] args) {
-        MySubClass obj = new MySubClass();
-        obj.myAbstractMethod();
-        obj.myConcreteMethod();
-    }
-}
-synchronized,public class Counter {
-    private int count = 0;
-
-    public synchronized void increment() {
-        count++;
-    }
-
-    public int getCount() {
-        return count;
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        Counter counter = new Counter();
-        Runnable task = () -> {
-            for (int i = 0; i < 1000; i++) {
-                counter.increment();
-            }
-        };
-
-        Thread t1 = new Thread(task);
-        Thread t2 = new Thread(task);
-        t1.start();
-        t2.start();
-        t1.join();
-        t2.join();
-        System.out.println("Final count: " + counter.getCount());
-    }
-}
-volatile,public class Worker {
-    private volatile boolean running = true;
-
-    public void start() {
-        new Thread(() -> {
-            while (running) {
-                System.out.println("Worker is running...");
-                try {
-                    Thread.sleep(500);
-                } catch (InterruptedException e) {
-                    e.printStackTrace();
-                }
-            }
-            System.out.println("Worker has stopped.");
-        }).start();
-    }
-
-    public void stop() {
-        running = false;
-    }
-
-    public static void main(String[] args) throws InterruptedException {
-        Worker worker = new Worker();
-        worker.start();
-        Thread.sleep(3000);
-        worker.stop();
-        Thread.sleep(1000);
-    }
-}
-transient,import java.io.*;
-
-public class MyClass implements Serializable {
-    private String regularData;
-    private transient String sensitiveData;
-
-    public MyClass(String regularData, String sensitiveData) {
-        this.regularData = regularData;
-        this.sensitiveData = sensitiveData;
-    }
-
-    public static void main(String[] args) {
-        MyClass
-transient,import java.io.*;
-
-public class MyClass implements Serializable {
-    private String regularData;
-    private transient String sensitiveData;
-
-    public MyClass(String regularData, String sensitiveData) {
-        this.regularData = regularData;
-        this.sensitiveData = sensitiveData;
-    }
-
-    public static void main(String[] args) {
-        MyClass obj = new MyClass("This will be saved", "This will NOT be saved");
-
-        // Serialization
-        try (ObjectOutputStream oos = new ObjectOutputStream(new FileOutputStream("data.ser"))) {
-            oos.writeObject(obj);
-            System.out.println("Object serialized.");
-        } catch (IOException e) {
-            e.printStackTrace();
+  "properties": {
+    "id": {
+      "description": "Lowercase, underscore-separated, unique identifier.",
+      "pattern": "^[a-z0-9_]+$",
+      "title": "Id",
+      "type": "string"
+    },
+    "name": {
+      "description": "Human-readable format, title case with acronyms.",
+      "title": "Name",
+      "type": "string"
+    },
+    "full_form": {
+      "description": "Full acronym expansion.",
+      "title": "Full Form",
+      "type": "string"
+    },
+    "category": {
+      "description": "Lowercase, underscore-separated.",
+      "pattern": "^[a-z0-9_]+$",
+      "title": "Category",
+      "type": "string"
+    },
+    "layer": {
+      "description": "Lowercase, underscore-separated.",
+      "pattern": "^[a-z0-9_]+$",
+      "title": "Layer",
+      "type": "string"
+    },
+    "system": {
+      "description": "System environment or domain.",
+      "title": "System",
+      "type": "string"
+    },
+    "utility": {
+      "description": "Lowercase values; multiple roles supported.",
+      "items": {
+        "type": "string"
+      },
+      "title": "Utility",
+      "type": "array"
+    },
+    "description": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
         }
-
-        // Deserialization
-        try (ObjectInputStream ois = new ObjectInputStream(new FileInputStream("data.ser"))) {
-            MyClass loadedObj = (MyClass) ois.readObject();
-            System.out.println("Object deserialized.");
-            System.out.println("regularData: " + loadedObj.regularData);
-            System.out.println("sensitiveData: " + loadedObj.sensitiveData); // Will be null
-        } catch (IOException | ClassNotFoundException e) {
-            e.printStackTrace();
+      ],
+      "default": null,
+      "description": "Optional description of the node.",
+      "title": "Description"
+    },
+    "connections": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
         }
+      ],
+      "default": null,
+      "description": "Optional list of connected node IDs.",
+      "title": "Connections"
+    },
+    "domain": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional domain the node belongs to.",
+      "title": "Domain"
+    },
+    "thresholds": {
+      "anyOf": [
+        {
+          "additionalProperties": {
+            "type": "number"
+          },
+          "type": "object"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional thresholds for triggering actions.",
+      "title": "Thresholds"
+    },
+    "status": {
+      "anyOf": [
+        {
+          "type": "string"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional status indicator, e.g., active, deprecated.",
+      "title": "Status"
+    },
+    "tags": {
+      "anyOf": [
+        {
+          "items": {
+            "type": "string"
+          },
+          "type": "array"
+        },
+        {
+          "type": "null"
+        }
+      ],
+      "default": null,
+      "description": "Optional list of tags or keywords.",
+      "title": "Tags"
     }
-}
-native,public class NativeExample {
-    // Native method declaration (no implementation in Java)
-    public native void myNativeMethod();
-
-    // Load the native library (e.g., mylibrary.so or mylibrary.dll)
-    static {
-        System.loadLibrary("mylibrary"); // Library name without prefix or extension
-    }
-
-    public static void main(String[] args) {
-        NativeExample obj = new NativeExample();
-        obj.myNativeMethod(); // Call the native method
-    }
-}
-strictfp,public class StrictFPExample {
-    // strictfp method
-    public strictfp double calculate(double a, double b) {
-        return a / b;
-    }
-
-    public static void main(String[] args) {
-        StrictFPExample obj = new StrictFPExample();
-        double result = obj.calculate(10.0, 3.0);
-        System.out.println("Result: " + result);
-    }
+  },
+  "required": [
+    "id",
+    "name",
+    "full_form",
+    "category",
+    "layer",
+    "system",
+    "utility"
+  ],
+  "title": "Node",
+  "type": "object"
 }
