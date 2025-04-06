@@ -1,89 +1,67 @@
-import networkx as nx
-import matplotlib.pyplot as plt
-import nltk
-from nltk.corpus import wordnet as wn
+ import networkx as nx
 
-# Make sure to download WordNet if not already done
-nltk.download('wordnet')
-
-def get_contextual_meaning(letter, surrounding_words):
+def add_acronym_node_to_graph(graph, acronym, possible_meanings, context=None, relevance=0.5, related_nodes_weights=None):
     """
-    Generate a contextual meaning for a letter based on surrounding words.
-    
+    Adds an ambiguous acronym node to the graph with attributes and probabilistic edges.
+
     Args:
-    - letter (str): The letter whose meaning needs to be generated.
-    - surrounding_words (list): A list of words surrounding the target word.
-    
-    Returns:
-    - str: A contextual meaning of the letter.
+    - graph (networkx.Graph): The graph to modify.
+    - acronym (str): The ambiguous acronym (e.g., 'OSA').
+    - possible_meanings (list[str]): List of potential interpretations.
+    - context (str): Contextual clue or location where the acronym appeared.
+    - relevance (float): Overall relevance score of this acronym to the graph's domain.
+    - related_nodes_weights (dict): Dictionary of related nodes and their edge weights.
     """
-    meanings = []
-    
-    # Iterate through the surrounding words to understand the context
-    for word in surrounding_words:
-        synsets = wn.synsets(word)
-        if synsets:
-            # Use the first synset's lemma names as potential meanings
-            meanings.extend([lemma.name() for lemma in synsets[0].lemmas()])
-    
-    # Here, we're simply returning the first meaning related to the letter
-    # This could be expanded with domain-specific knowledge
-    return meanings[0] if meanings else "unknown"
+    graph.add_node(acronym,
+                   possible_meanings=possible_meanings,
+                   context=context,
+                   relevance=relevance,
+                   type='acronym')
 
-def encode_word_with_context(word, surrounding_words):
-    """
-    Encodes a word into a numeric vector based on the alphabet-to-number mapping,
-    but modifies each letter's encoding based on surrounding context.
-    
-    Args:
-    - word (str): The word to encode.
-    - surrounding_words (list): List of surrounding words for contextual analysis.
-    
-    Returns:
-    - List[int]: A list of integers representing the word with contextual adjustments.
-    """
-    encoded_word = []
-    
-    for char in word.upper():
-        if char.isalpha():
-            # Get the contextual meaning of the letter based on surrounding words
-            meaning = get_contextual_meaning(char, surrounding_words)
-            
-            # Adjust the letter encoding based on the contextual meaning
-            letter_encoding = (ord(char) - ord('A') + 1)  # Basic encoding (1-26)
-            
-            # Here, we could adjust encoding based on the meaning, for now, we use the length of meaning
-            # As a simple proxy, we modify the encoding based on the length of the meaning
-            contextual_encoding = letter_encoding + len(meaning)
-            encoded_word.append(contextual_encoding)
-        else:
-            encoded_word.append(0)  # For non-alphabetic characters (e.g., spaces)
-    
-    return encoded_word
+    if related_nodes_weights:
+        for node, weight in related_nodes_weights.items():
+            if node in graph.nodes:
+                graph.add_edge(acronym, node, weight=weight)
 
-def add_to_graph(graph, word, relationships, surrounding_words):
-    """
-    Adds a new word (acronym) to the graph and updates relationships.
-    
-    Args:
-    - graph (networkx.Graph): The existing graph.
-    - word (str): The new word (acronym) to add.
-    - relationships (list): A list of relationships (edges) with other words.
-    - surrounding_words (list): List of surrounding words for contextual analysis.
-    """
-    # Add the new word as a node with context-aware encoding
-    graph.add_node(word, encoded=encode_word_with_context(word, surrounding_words))
-    
-    # Add relationships (edges) with other words
-    for related_word in relationships:
-        graph.add_edge(word, related_word)
-
-# Create an empty graph
+    return graph
+    # Initialize graph
 graph = nx.Graph()
+graph.add_nodes_from(["temperature", "humidity", "cloudy"])
 
-# Example of adding a new word and relationships
-add_to_graph(graph, "cloudy", ["weather", "humidity"], ["temperature", "rain", "storm"])
+# Define OSA possible meanings
+osa_meanings = [
+    "Optical Spectrum Analyzer",
+    "Outside Air",
+    "Obstructive Sleep Apnea"
+]
 
-# Visualize the updated graph
-nx.draw(graph, with_labels=True, node_size=2000, node_color="skyblue", font_size=12, font_weight="bold")
+# Add OSA node with example relationships
+related_weights = {
+    "temperature": 0.6,
+    "humidity": 0.7,
+    "cloudy": 0.3
+}
+
+graph = add_acronym_node_to_graph(
+    graph,
+    acronym="OSA",
+    possible_meanings=osa_meanings,
+    context="weather app interface",
+    relevance=0.8,
+    related_nodes_weights=related_weights
+)
+
+# Inspect
+print(graph.nodes["OSA"])
+print(list(graph.edges("OSA", data=True)))
+feature_vector = {
+    "OSA": 1,
+    "OSA_is_outside_air": 1,
+    "OSA_is_obstructive_sleep_apnea": 0,
+    "temperature": 73,
+    "humidity": 45,
+    "context_contains": "weather app"
+}colors = ['red' if graph.nodes[node].get('type') == 'acronym' else 'skyblue' for node in graph.nodes]
+
+nx.draw(graph, with_labels=True, node_color=colors, node_size=2000, font_weight='bold')
 plt.show()
