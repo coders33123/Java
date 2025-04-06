@@ -1,3 +1,6 @@
+if not graph.has_node(word):
+    graph.add_node(word, encoded=encode_word_with_context(word, surrounding_words))
+ 
  import networkx as nx
 nltk.download('wordnet')
 def add_acronym_node_to_graph(graph, acronym, possible_meanings, context=None, relevance=0.5, related_nodes_weights=None):
