@@ -1,87 +1,48 @@
 import networkx as nx
+import heapq
+import datetime
+import logging
 
-# Metadata-like structure for properties
-properties = {
-    "id": {
-        "description": "Lowercase, underscore-separated, unique identifier.",
-        "pattern": "^[a-z0-9_]+$",
-        "title": "Id",
-        "type": "string"
+logging.basicConfig(level=logging.INFO)
+
+node_types = {
+    "sensor": {
+        "default_state": {"value": 0},
+        "on_threshold_event": lambda node, event: logging.info(f"Sensor {node} event: {event}")
     },
-    "name": {
-        "description": "Human-readable format, title case with acronyms.",
-        "title": "Name",
-        "type": "string"
-    },
-    "full_form": {
-        "description": "Full acronym expansion.",
-        "title": "Full Form",
-        "type": "string"
+    "controller": {
+        "default_state": {"status": "idle"},
+        "on_state_change": lambda node, event: logging.info(f"Controller {node} event: {event}")
     }
 }
 
-# Depth-First Search (DFS) function with metadata
-def dfs(graph, start, max_depth=None):
-    """
-    Perform Depth-First Search (DFS) from a starting node.
+event_queue = []
 
-    Parameters:
-    - graph: The graph object (directed or undirected).
-    - start: The node to start the traversal.
-    - max_depth: The maximum depth to search (optional, None for no limit).
+def add_node_with_type(graph, node_id, node_type, **kwargs):
+    state = node_types[node_type]["default_state"].copy()
+    state.update(kwargs)
+    graph.add_node(node_id, node_type=node_type, **state)
 
-    Returns:
-    - A list of nodes visited during the traversal.
-    """
-    visited, result = set(), []
+def add_event(event_type, node, priority, **kwargs):
+    event = {"event_type": event_type, "node": node, "timestamp": datetime.datetime.now(), "priority": priority, **kwargs}
+    heapq.heappush(event_queue, (priority, event))
+    logging.info(f"Event added: {event}")
 
-    def _dfs(node, depth):
-        if node not in visited and (max_depth is None or depth <= max_depth):
-            visited.add(node)
-            result.append(node)
-            for neighbor in graph.neighbors(node):
-                _dfs(neighbor, depth + 1)
+def process_events(graph):
+    while event_queue:
+        priority, event = heapq.heappop(event_queue)
+        logging.info(f"Processing: {event}")
+        node_type = graph.nodes[event["node"]]["node_type"]
+        if event["event_type"] == "threshold_event" and "on_threshold_event" in node_types[node_type]:
+            node_types[node_type]["on_threshold_event"](event["node"], event)
+        elif event["event_type"] == "state_change" and "on_state_change" in node_types[node_type]:
+            node_types[node_type]["on_state_change"](event["node"], event)
 
-    _dfs(start, 0)
-    return result
+graph = nx.Graph()
+add_node_with_type(graph, "sensor1", "sensor", value=5)
+add_node_with_type(graph, "controller1", "controller", status="active")
 
-# Breadth-First Search (BFS) function with metadata
-def bfs(graph, start, max_depth=None):
-    """
-    Perform Breadth-First Search (BFS) from a starting node.
+add_event("threshold_event", "sensor1", 1, value=10)
+add_event("state_change", "controller1", 2, status="inactive")
 
-    Parameters:
-    - graph: The graph object (directed or undirected).
-    - start: The node to start the traversal.
-    - max_depth: The maximum depth to search (optional, None for no limit).
-
-    Returns:
-    - A list of nodes visited during the traversal.
-    """
-    visited, queue, result, depth = set(), [start], [], 0
-
-    while queue and (max_depth is None or depth <= max_depth):
-        node = queue.pop(0)
-        if node not in visited:
-            visited.add(node)
-            result.append(node)
-            queue.extend(graph.neighbors(node))
-        if not queue:
-            depth += 1
-    return result
-
-# Example: Graph Creation and Usage of DFS/BFS
-if __name__ == "__main__":
-    G = nx.Graph()
-    G.add_edges_from([(1, 2), (2, 3), (3, 4), (4, 5)])
-
-    # Example DFS and BFS
-    print("DFS Traversal:", dfs(G, 1))
-    print("BFS Traversal:", bfs(G, 1))
-
-    # Output metadata properties
-    print("\nMetadata Properties:")
-    for key, value in properties.items():
-        print(f"{key.capitalize()}:")
-        for k, v in value.items():
-            print(f"  {k}: {v}")
+process_events(graph)
