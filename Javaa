@@ -1,143 +1,87 @@
+import networkx as nx
 
-  "properties": {
+# Metadata-like structure for properties
+properties = {
     "id": {
-      "description": "Lowercase, underscore-separated, unique identifier.",
-      "pattern": "^[a-z0-9_]+$",
-      "title": "Id",
-      "type": "string"
+        "description": "Lowercase, underscore-separated, unique identifier.",
+        "pattern": "^[a-z0-9_]+$",
+        "title": "Id",
+        "type": "string"
     },
     "name": {
-      "description": "Human-readable format, title case with acronyms.",
-      "title": "Name",
-      "type": "string"
+        "description": "Human-readable format, title case with acronyms.",
+        "title": "Name",
+        "type": "string"
     },
     "full_form": {
-      "description": "Full acronym expansion.",
-      "title": "Full Form",
-      "type": "string"
-    },
-    "category": {
-      "description": "Lowercase, underscore-separated.",
-      "pattern": "^[a-z0-9_]+$",
-      "title": "Category",
-      "type": "string"
-    },
-    "layer": {
-      "description": "Lowercase, underscore-separated.",
-      "pattern": "^[a-z0-9_]+$",
-      "title": "Layer",
-      "type": "string"
-    },
-    "system": {
-      "description": "System environment or domain.",
-      "title": "System",
-      "type": "string"
-    },
-    "utility": {
-      "description": "Lowercase values; multiple roles supported.",
-      "items": {
+        "description": "Full acronym expansion.",
+        "title": "Full Form",
         "type": "string"
-      },
-      "title": "Utility",
-      "type": "array"
-    },
-    "description": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Optional description of the node.",
-      "title": "Description"
-    },
-    "connections": {
-      "anyOf": [
-        {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Optional list of connected node IDs.",
-      "title": "Connections"
-    },
-    "domain": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Optional domain the node belongs to.",
-      "title": "Domain"
-    },
-    "thresholds": {
-      "anyOf": [
-        {
-          "additionalProperties": {
-            "type": "number"
-          },
-          "type": "object"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Optional thresholds for triggering actions.",
-      "title": "Thresholds"
-    },
-    "status": {
-      "anyOf": [
-        {
-          "type": "string"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Optional status indicator, e.g., active, deprecated.",
-      "title": "Status"
-    },
-    "tags": {
-      "anyOf": [
-        {
-          "items": {
-            "type": "string"
-          },
-          "type": "array"
-        },
-        {
-          "type": "null"
-        }
-      ],
-      "default": null,
-      "description": "Optional list of tags or keywords.",
-      "title": "Tags"
     }
-  },
-  "required": [
-    "id",
-    "name",
-    "full_form",
-    "category",
-    "layer",
-    "system",
-    "utility"
-  ],
-  "title": "Node",
-  "type": "object"
 }
+
+# Depth-First Search (DFS) function with metadata
+def dfs(graph, start, max_depth=None):
+    """
+    Perform Depth-First Search (DFS) from a starting node.
+
+    Parameters:
+    - graph: The graph object (directed or undirected).
+    - start: The node to start the traversal.
+    - max_depth: The maximum depth to search (optional, None for no limit).
+
+    Returns:
+    - A list of nodes visited during the traversal.
+    """
+    visited, result = set(), []
+
+    def _dfs(node, depth):
+        if node not in visited and (max_depth is None or depth <= max_depth):
+            visited.add(node)
+            result.append(node)
+            for neighbor in graph.neighbors(node):
+                _dfs(neighbor, depth + 1)
+
+    _dfs(start, 0)
+    return result
+
+# Breadth-First Search (BFS) function with metadata
+def bfs(graph, start, max_depth=None):
+    """
+    Perform Breadth-First Search (BFS) from a starting node.
+
+    Parameters:
+    - graph: The graph object (directed or undirected).
+    - start: The node to start the traversal.
+    - max_depth: The maximum depth to search (optional, None for no limit).
+
+    Returns:
+    - A list of nodes visited during the traversal.
+    """
+    visited, queue, result, depth = set(), [start], [], 0
+
+    while queue and (max_depth is None or depth <= max_depth):
+        node = queue.pop(0)
+        if node not in visited:
+            visited.add(node)
+            result.append(node)
+            queue.extend(graph.neighbors(node))
+        if not queue:
+            depth += 1
+    return result
+
+# Example: Graph Creation and Usage of DFS/BFS
+if __name__ == "__main__":
+    G = nx.Graph()
+    G.add_edges_from([(1, 2), (2, 3), (3, 4), (4, 5)])
+
+    # Example DFS and BFS
+    print("DFS Traversal:", dfs(G, 1))
+    print("BFS Traversal:", bfs(G, 1))
+
+    # Output metadata properties
+    print("\nMetadata Properties:")
+    for key, value in properties.items():
+        print(f"{key.capitalize()}:")
+        for k, v in value.items():
+            print(f"  {k}: {v}")
